@@ -201,7 +201,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    //__HAL_AFIO_REMAP_TIM3_ENABLE();
+    __HAL_AFIO_REMAP_TIM3_ENABLE();
 
   /* USER CODE BEGIN TIM3_MspPostInit 1 */
 

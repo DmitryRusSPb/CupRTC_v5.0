@@ -11,9 +11,9 @@
 #t/* start timers, add new ones, ... */
 #t/* USER CODE END RTOS_TIMERS */
 #n#t/* Create the thread(s) */
-#t/* definition and creation of defaultTask */
-#tosThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 64);
-#tdefaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+#t/* definition and creation of LCDTask */
+#tosThreadDef(LCDTask, StartLCDTask, osPriorityNormal, 0, 64);
+#tLCDTaskHandle = osThreadCreate(osThread(LCDTask), NULL);
 #n
 #n
 #t/* USER CODE BEGIN RTOS_THREADS */

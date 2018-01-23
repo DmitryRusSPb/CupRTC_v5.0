@@ -1,15 +1,15 @@
 
-#n#n/* StartDefaultTask function */
-void StartDefaultTask(void const * argument)
+#n#n/* StartLCDTask function */
+void StartLCDTask(void const * argument)
 {
 
 #n
-#t/* USER CODE BEGIN StartDefaultTask */
+#t/* USER CODE BEGIN StartLCDTask */
 #t/* Infinite loop */
 #tfor(;;)
 #t{
 #t#tosDelay(1);
 #t}
-#t/* USER CODE END StartDefaultTask */
+#t/* USER CODE END StartLCDTask */
 }
 #n

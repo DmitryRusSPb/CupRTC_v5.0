@@ -1,50 +1,50 @@
 /**
-  ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
-  ******************************************************************************
-  * This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
-  *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
-  * All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without 
-  * modification, are permitted, provided that the following conditions are met:
-  *
-  * 1. Redistribution of source code must retain the above copyright notice, 
-  *    this list of conditions and the following disclaimer.
-  * 2. Redistributions in binary form must reproduce the above copyright notice,
-  *    this list of conditions and the following disclaimer in the documentation
-  *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
-  *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
-  *    software, must execute solely and exclusively on microcontroller or
-  *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
-  *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
-  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * File Name          : freertos.c
+ * Description        : Code for freertos applications
+ ******************************************************************************
+ * This notice applies to any and all portions of this file
+ * that are not between comment pairs USER CODE BEGIN and
+ * USER CODE END. Other portions of this file, whether
+ * inserted by the user or by software development tools
+ * are owned by their respective copyright owners.
+ *
+ * Copyright (c) 2018 STMicroelectronics International N.V.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted, provided that the following conditions are met:
+ *
+ * 1. Redistribution of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. Neither the name of STMicroelectronics nor the names of other
+ *    contributors to this software may be used to endorse or promote products
+ *    derived from this software without specific written permission.
+ * 4. This software, including modifications and/or derivative works of this
+ *    software, must execute solely and exclusively on microcontroller or
+ *    microprocessor devices manufactured by or for STMicroelectronics.
+ * 5. Redistribution and use of this software other than as permitted under
+ *    this license is void and will automatically terminate your rights under
+ *    this license.
+ *
+ * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
+ * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT
+ * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ******************************************************************************
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
@@ -75,7 +75,7 @@
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
-osThreadId defaultTaskHandle;
+osThreadId LCDTaskHandle;
 
 /* USER CODE BEGIN Variables */
 osThreadId ButtonHandle;
@@ -112,7 +112,7 @@ uint8_t dataBuffer[60];
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
-void StartDefaultTask(void const * argument);
+void StartLCDTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -135,125 +135,121 @@ void StartUSARTTask(void const * argument);
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
-void vApplicationIdleHook(void);
-void vApplicationTickHook(void);
-void vApplicationMallocFailedHook(void);
-
-/* USER CODE BEGIN 2 */
-__weak void vApplicationIdleHook( void )
-{
-   /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
-   to 1 in FreeRTOSConfig.h. It will be called on each iteration of the idle
-   task. It is essential that code added to this hook function never attempts
-   to block in any way (for example, call xQueueReceive() with a block time
-   specified, or call vTaskDelay()). If the application makes use of the
-   vTaskDelete() API function (as this demo application does) then it is also
-   important that vApplicationIdleHook() is permitted to return to its calling
-   function, because it is the responsibility of the idle task to clean up
-   memory allocated by the kernel to any task that has since been deleted. */
-}
-/* USER CODE END 2 */
-
-/* USER CODE BEGIN 3 */
-__weak void vApplicationTickHook( void )
-{
-   /* This function will be called by each tick interrupt if
-   configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h. User code can be
-   added here, but the tick hook is called from an interrupt context, so
-   code must not attempt to block, and only the interrupt safe FreeRTOS API
-   functions can be used (those that end in FromISR()). */
-}
-/* USER CODE END 3 */
-
-/* USER CODE BEGIN 5 */
-__weak void vApplicationMallocFailedHook(void)
-{
-   /* vApplicationMallocFailedHook() will only be called if
-   configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h. It is a hook
-   function that will get called if a call to pvPortMalloc() fails.
-   pvPortMalloc() is called internally by the kernel whenever a task, queue,
-   timer or semaphore is created. It is also called by various parts of the
-   demo application. If heap_1.c or heap_2.c are used, then the size of the
-   heap available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
-   FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
-   to query the size of free heap space that remains (although it does not
-   provide information on how the remaining heap might be fragmented). */
-}
-/* USER CODE END 5 */
 
 /* Init FreeRTOS */
 
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+	/* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+	/* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+	/* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+	/* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+	/* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+	/* USER CODE END RTOS_TIMERS */
 
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 64);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+	/* Create the thread(s) */
+	/* definition and creation of LCDTask */
+	osThreadDef(LCDTask, StartLCDTask, osPriorityNormal, 0, 64);
+	LCDTaskHandle = osThreadCreate(osThread(LCDTask), NULL);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-		if(systemMode == SYSTEM_MODE_UPDATE)
-		{
-			/* definition and creation of USART */
-			osThreadDef(USART, StartUSARTTask, osPriorityIdle, 0, 256);
-			USARTHandle = osThreadCreate(osThread(USART), NULL);
-		}
-		else
-		{
-			osThreadDef(Button, StartButtonTask, osPriorityIdle, 0, 256);
-			ButtonHandle = osThreadCreate(osThread(Button), NULL);
+	if(systemMode == SYSTEM_MODE_UPDATE)
+	{
+		/* definition and creation of USART */
+		osThreadDef(USART, StartUSARTTask, osPriorityIdle, 0, 256);
+		USARTHandle = osThreadCreate(osThread(USART), NULL);
+	}
+	else
+	{
+		osThreadDef(Button, StartButtonTask, osPriorityIdle, 0, 256);
+		ButtonHandle = osThreadCreate(osThread(Button), NULL);
 
-	#ifdef	LED_MATRIX_ENABLE
-			/* definition and creation of LEDmatrix */
-			osThreadDef(LEDmatrix, StartLEDmatrixTask, osPriorityIdle, 0, 256);
-			LEDmatrixHandle = osThreadCreate(osThread(LEDmatrix), NULL);
-	#endif
+#ifdef	LED_MATRIX_ENABLE
+		/* definition and creation of LEDmatrix */
+		osThreadDef(LEDmatrix, StartLEDmatrixTask, osPriorityIdle, 0, 256);
+		LEDmatrixHandle = osThreadCreate(osThread(LEDmatrix), NULL);
+#endif
 
-	#ifdef	AUDIO_ENABLE
-			/* definition and creation of AudioMessage */
-			osThreadDef(AudioMessage, StartAudioMessageTask, osPriorityIdle, 0, 256);
-			AudioMessageHandle = osThreadCreate(osThread(AudioMessage), NULL);
-	#endif
-	#ifdef	WS2812B_ENABLE
-			/* definition and creation of RGBws2812b */
-			osThreadDef(RGBws2812b, StartRGBws2812bTask, osPriorityIdle, 0, 512);
-			RGBws2812bHandle = osThreadCreate(osThread(RGBws2812b), NULL);
-	#endif
-		}
-  /* USER CODE END RTOS_THREADS */
+#ifdef	AUDIO_ENABLE
+		/* definition and creation of AudioMessage */
+		osThreadDef(AudioMessage, StartAudioMessageTask, osPriorityIdle, 0, 256);
+		AudioMessageHandle = osThreadCreate(osThread(AudioMessage), NULL);
+#endif
+#ifdef	WS2812B_ENABLE
+		/* definition and creation of RGBws2812b */
+		osThreadDef(RGBws2812b, StartRGBws2812bTask, osPriorityIdle, 0, 512);
+		RGBws2812bHandle = osThreadCreate(osThread(RGBws2812b), NULL);
+#endif
+	}
+	/* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+	/* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+	/* USER CODE END RTOS_QUEUES */
 }
 
-/* StartDefaultTask function */
-void StartDefaultTask(void const * argument)
+/* StartLCDTask function */
+void StartLCDTask(void const * argument)
 {
 
-  /* USER CODE BEGIN StartDefaultTask */
-	vTaskSuspend(NULL);
+	/* USER CODE BEGIN StartLCDTask */
 	/* Infinite loop */
 	for(;;)
 	{
-		osDelay(1);
+#ifndef LCD_ENABLE
+		vTaskSusped(NULL);
+#endif
+#ifdef LCD_ENABLE
+		//	// Чистим экран
+		//	TM_HD44780_Clear();
+		//	osDelay(100);
+		//	// Если включен демо-режим, то показываем демо-сообщение,
+		//	// если нет, то выводим текст, записанный в память
+		//	if(systemMode)
+		//	{
+		//		TM_HD44780_Puts(0, 0, (uint8_t*)DEMO_TEXT_1, LEN_DEMO_TEXT_1);
+		//		TM_HD44780_Puts(0, 1, (uint8_t*)DEMO_TEXT_2, LEN_DEMO_TEXT_2);
+		//	}
+		//	else
+		//	{
+		//		TM_HD44780_Puts(0, 0, (void *)TEXT2_address, *(uint32_t*)SIZE_TEXT2_address);
+		//		TM_HD44780_Puts(0, 1, (void *)TEXT1_address, *(uint32_t*)SIZE_TEXT1_address);
+		//	}
+		TM_HD44780_Clear();
+		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n1", strlen("Участник n1"));
+		osDelay(5000);
+		TM_HD44780_Clear();
+		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n2", strlen("Участник n2"));
+		osDelay(5000);
+		TM_HD44780_Clear();
+		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n3", strlen("Участник n3"));
+		osDelay(5000);
+		TM_HD44780_Clear();
+		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n4", strlen("Участник n4"));
+		osDelay(5000);
+		TM_HD44780_Clear();
+		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n5", strlen("Участник n5"));
+		osDelay(5000);
+		TM_HD44780_Clear();
+		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n6", strlen("Участник n6"));
+#endif
 	}
-  /* USER CODE END StartDefaultTask */
+	/* USER CODE END StartLCDTask */
 }
 
 /* USER CODE BEGIN Application */
@@ -263,24 +259,6 @@ void StartButtonTask(void const * argument)
 {
 	// Создаем счётчик для фиксации времени нажатия кнопки
 	uint8_t pressTime;
-
-#ifdef LCD_ENABLE
-	// Чистим экран
-	TM_HD44780_Clear();
-	osDelay(100);
-	// Если включен демо-режим, то показываем демо-сообщение,
-	// если нет, то выводим текст, записанный в память
-	if(systemMode)
-	{
-		TM_HD44780_Puts(0, 0, (uint8_t*)DEMO_TEXT_1, LEN_DEMO_TEXT_1);
-		TM_HD44780_Puts(0, 1, (uint8_t*)DEMO_TEXT_2, LEN_DEMO_TEXT_2);
-	}
-	else
-	{
-		TM_HD44780_Puts(0, 0, (void *)TEXT2_address, *(uint32_t*)SIZE_TEXT2_address);
-		TM_HD44780_Puts(0, 1, (void *)TEXT1_address, *(uint32_t*)SIZE_TEXT1_address);
-	}
-#endif
 
 	for(;;)
 	{
@@ -411,6 +389,11 @@ void StartRGBws2812bTask(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
+		for(uint8_t i = 0; i<=255; i++)
+		{
+			WS2812_combination_2(i);
+			osDelay(1000);
+		}
 		for (uint16_t i = 0; i+50 < 765; i++)
 		{
 			if(playSound)
@@ -440,103 +423,103 @@ void StartUSARTTask(void const * argument)
 	/* USER CODE BEGIN StartUSARTTask */
 	/* Infinite loop */
 	// Счетчик, показывающий сколько мы уже приняли байт в "data_buffer"
-		uint8_t numBuff;
+	uint8_t numBuff;
 
-		// Ответ о состоянии принятого сообщения
-		uint8_t answer;
+	// Ответ о состоянии принятого сообщения
+	uint8_t answer;
 
-		// Здесь будут храниться данные после парсинга
-		RecData dataBufferPars;
+	// Здесь будут храниться данные после парсинга
+	RecData dataBufferPars;
 
-		uint8_t *ptrBuff;
+	uint8_t *ptrBuff;
 
-	#ifdef LCD_ENABLE
-		uint8_t updateLine;
-		// Чистим экран
-		TM_HD44780_Clear();
-		updateLine = 0;
-	#endif
+#ifdef LCD_ENABLE
+	uint8_t updateLine;
+	// Чистим экран
+	TM_HD44780_Clear();
+	updateLine = 0;
+#endif
 
-		for(;;)
+	for(;;)
+	{
+		// Крутимся в цикле пока не закончится обновление
+		// Обнуляем счётчик полученных данных
+		allDataSize = 0;
+		// Сообщаем, что мы готовы к получению первого блока данных
+		answer = 's';
+		HAL_UART_Transmit(&huart2, (uint8_t*)&answer, 1, 0xFFFF);
+		while(1)
 		{
-			// Крутимся в цикле пока не закончится обновление
-			// Обнуляем счётчик полученных данных
-			allDataSize = 0;
-			// Сообщаем, что мы готовы к получению первого блока данных
-			answer = 's';
-			HAL_UART_Transmit(&huart2, (uint8_t*)&answer, 1, 0xFFFF);
-			while(1)
+			// Крутимся в цикле пока не встретим символ окончания сообщения
+			// или пока не будет переполнения буфера данных "data_buffer",
+			// или пока не перестанут приходить данные
+
+			// Присваеваем указателю адрес начала буфера
+			ptrBuff = dataBuffer;
+			// Обнуляем счётчик байтов в буфере "data_buffer"
+			numBuff = 0;
+			// По умолчанию ответное сообщение означает успешную передачу
+			answer = 'g';
+			// Принимаем данные по байту и забрасываем в наш буфер
+			while(numBuff < SIZE_BUFF)
 			{
-				// Крутимся в цикле пока не встретим символ окончания сообщения
-				// или пока не будет переполнения буфера данных "data_buffer",
-				// или пока не перестанут приходить данные
-
-				// Присваеваем указателю адрес начала буфера
-				ptrBuff = dataBuffer;
-				// Обнуляем счётчик байтов в буфере "data_buffer"
-				numBuff = 0;
-				// По умолчанию ответное сообщение означает успешную передачу
-				answer = 'g';
-				// Принимаем данные по байту и забрасываем в наш буфер
-				while(numBuff < SIZE_BUFF)
-				{
-					// Приём
-					HAL_UART_Receive(&huart2, ptrBuff, 1, 0xFFFF);
-					// Увеличиваем счётчик принятых байтов
-					numBuff++;
-					// Если встретили символ окончания сообщения, то выходим из цикла
-					if(*ptrBuff == '>')
-						break;
-					// Двигаем указатель на следующий элемент массива
-					ptrBuff++;
-				}
-				// Если переданный пакет байтов состоит лишь из <0>, то это означает конец
-				// передачи. Выходим из цикла приёма пакетов
-				if((*ptrBuff == '>')&&(*(ptrBuff-1) == '0')&&(*(ptrBuff-2) == '<'))
-				{
+				// Приём
+				HAL_UART_Receive(&huart2, ptrBuff, 1, 0xFFFF);
+				// Увеличиваем счётчик принятых байтов
+				numBuff++;
+				// Если встретили символ окончания сообщения, то выходим из цикла
+				if(*ptrBuff == '>')
 					break;
-				}
-				// Парсим полученные данные
-				dataBufferPars = parsing((char*)dataBuffer, numBuff);
-
-	#ifdef LCD_ENABLE
-				// Полоска закрузки на LCD
-				// Если полоска достигла окончания строки дисплея, то...
-				if(!((updateLine + 1) % 17))
-				{
-					// Чистим экран
-					TM_HD44780_Clear();
-					// Обнуляем счётчик полоски
-					updateLine = 0;
-					// Выводим сообщение об обновлении, так как оно стёрлось
-					TM_HD44780_Puts(0, 0, (uint8_t*)UPDATE_TEXT, LEN_UPDATE_TEXT);
-				}
-				// Выводим элемент полоски загрузки на LCD
-				TM_HD44780_PutCustom(updateLine, 1, 255);
-				// Увеличиваем счётчик полоски загрузки
-				updateLine++;
-	#endif
-
-				// Если не возникло ошибок при парсинге, то сохраняем
-				// полученные данные в памяти МК
-				if(dataBufferPars.command != 6)
-				{
-					// Сохраняем данные в памяти
-					answer = SU_FLASH_Save_User_Data(dataBufferPars, numBuff);
-				}
-				else
-				{
-					// Если возникли проблемы при записи, то переменной,
-					// в которой хранится ответ приложению, присваеваем
-					// символ ошибки
-					answer = 'f';
-				}
-				// Отправляем результат работы
-				HAL_UART_Transmit(&huart2, (uint8_t*)&answer, 1, 0xFFFF);
+				// Двигаем указатель на следующий элемент массива
+				ptrBuff++;
 			}
-			osDelay(100);
-			vTaskDelete(NULL);
+			// Если переданный пакет байтов состоит лишь из <0>, то это означает конец
+			// передачи. Выходим из цикла приёма пакетов
+			if((*ptrBuff == '>')&&(*(ptrBuff-1) == '0')&&(*(ptrBuff-2) == '<'))
+			{
+				break;
+			}
+			// Парсим полученные данные
+			dataBufferPars = parsing((char*)dataBuffer, numBuff);
+
+#ifdef LCD_ENABLE
+			// Полоска закрузки на LCD
+			// Если полоска достигла окончания строки дисплея, то...
+			if(!((updateLine + 1) % 17))
+			{
+				// Чистим экран
+				TM_HD44780_Clear();
+				// Обнуляем счётчик полоски
+				updateLine = 0;
+				// Выводим сообщение об обновлении, так как оно стёрлось
+				TM_HD44780_Puts(0, 0, (uint8_t*)UPDATE_TEXT, LEN_UPDATE_TEXT);
+			}
+			// Выводим элемент полоски загрузки на LCD
+			TM_HD44780_PutCustom(updateLine, 1, 255);
+			// Увеличиваем счётчик полоски загрузки
+			updateLine++;
+#endif
+
+			// Если не возникло ошибок при парсинге, то сохраняем
+			// полученные данные в памяти МК
+			if(dataBufferPars.command != 6)
+			{
+				// Сохраняем данные в памяти
+				answer = SU_FLASH_Save_User_Data(dataBufferPars, numBuff);
+			}
+			else
+			{
+				// Если возникли проблемы при записи, то переменной,
+				// в которой хранится ответ приложению, присваеваем
+				// символ ошибки
+				answer = 'f';
+			}
+			// Отправляем результат работы
+			HAL_UART_Transmit(&huart2, (uint8_t*)&answer, 1, 0xFFFF);
 		}
+		osDelay(100);
+		vTaskDelete(NULL);
+	}
 	/* USER CODE END StartUSARTTask */
 }
 

@@ -1,1 +1,1 @@
-void StartDefaultTask(void const * argument);
+void StartLCDTask(void const * argument);

@@ -58,7 +58,7 @@ AnswerStatus SU_FLASH_Save_User_Data(RecData parsData, uint8_t numReceivedBytes)
 		// ,а лишь информация о роде данных.
 		messageSize = numReceivedBytes - 15;
 		multipleMessageSize = messageSize;
-		allDataSize += 80;
+		allDataSize += MAX_TEXT_SIZE;
 		// Прибавляем 4, так как нужно учесть запись о размере текста
 		// , которая занимает в памяти 4 байта
 		allDataSize += 4;
@@ -113,19 +113,19 @@ AnswerStatus SU_FLASH_Save_User_Data(RecData parsData, uint8_t numReceivedBytes)
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, START_FLASH_PAGE, convert);
 		break;
 	case TEXT1:
-		WriteToFlash(SIZE_TEXT1_address, SIZE_TEXT1_MEMORY_SIZE, (uint8_t*)&multipleMessageSize);
-		WriteToFlash(TEXT1_address, (uint32_t)multipleMessageSize, parsData.data);
+		WriteToFlash((uint32_t*)SIZE_TEXT1_address, (uint32_t)SIZE_RECORD_OF_TEXT_SIZE, (uint8_t*)&multipleMessageSize);
+		WriteToFlash((uint32_t*)TEXT1_address, (uint32_t)multipleMessageSize, parsData.data);
 		break;
 	case TEXT2:
-		WriteToFlash(SIZE_TEXT2_address, SIZE_TEXT2_MEMORY_SIZE, (uint8_t*)&multipleMessageSize);
-		WriteToFlash(TEXT2_address, (uint32_t)multipleMessageSize, parsData.data);
+		WriteToFlash((uint32_t*)SIZE_TEXT2_address, (uint32_t)SIZE_RECORD_OF_TEXT_SIZE, (uint8_t*)&multipleMessageSize);
+		WriteToFlash((uint32_t*)TEXT2_address, (uint32_t)multipleMessageSize, parsData.data);
 		break;
 	case BLOCK:
 		convert |= parsData.blockNumber;
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, BLOCK_address, convert);
 		break;
 	case SPEEX:
-		WriteToFlash(SPEEX_address + parsData.blockNumber*20, 20, parsData.data);
+		WriteToFlash((uint32_t*)SPEEX_address + parsData.blockNumber*20, 20, parsData.data);
 		break;
 	}
 	HAL_FLASH_Lock();
@@ -137,7 +137,7 @@ void WriteToFlash(uint32_t* writeAddress, uint32_t sizeData, uint8_t *data)
 	// Записываем по 4 байта данные из буфера
 	for(uint8_t i = 0; i < sizeData; i+=4)
 	{
-		if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, writeAddress, *(uint32_t*)(data)) == HAL_OK)
+		if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, *writeAddress, *(uint32_t*)(data)) == HAL_OK)
 		{
 			writeAddress ++;
 			data += 4;

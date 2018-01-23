@@ -1,1 +1,1 @@
-osThreadId defaultTaskHandle;
+osThreadId LCDTaskHandle;

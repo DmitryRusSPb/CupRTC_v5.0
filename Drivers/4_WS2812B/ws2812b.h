@@ -48,5 +48,7 @@ void WS2812_send_group(uint8_t redLED1, uint8_t greenLED1, uint8_t blueLED1,
 		uint8_t redLED2, uint8_t greenLED2, uint8_t blueLED2,
 		uint8_t redLED3, uint8_t greenLED3, uint8_t blueLED3,
 		uint8_t redLED4, uint8_t greenLED4, uint8_t blueLED4);
+void WS2812_combination_1(uint8_t color);
+void WS2812_combination_2(uint8_t color);
 
 #endif /* WS2812B_WS2812B_H_ */

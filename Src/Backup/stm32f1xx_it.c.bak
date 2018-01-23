@@ -37,6 +37,8 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN 0 */
+#include "defines.h"
+
 #ifdef AUDIO_ENABLE
 volatile int i=0;
 extern __IO uint8_t startDecoding;
@@ -205,7 +207,7 @@ void TIM6_IRQHandler(void)
 	uint16_t tmp;
 
 	// Сбрасываем флаг прерывания
-	HAL_NVIC_ClearPendingIRQ(TIM3_IRQn);
+	HAL_NVIC_ClearPendingIRQ(TIM6_IRQn);
 	// Преобразуем данные из буфера для ЦАПа
 	tmp = (uint16_t)(((*outBuff>>5)) + 0x200);
 	// Отправляем данные в ЦАП

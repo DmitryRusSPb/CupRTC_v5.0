@@ -96,8 +96,8 @@
 #define configUSE_PREEMPTION                     1
 #define configSUPPORT_STATIC_ALLOCATION          0
 #define configSUPPORT_DYNAMIC_ALLOCATION         1
-#define configUSE_IDLE_HOOK                      1
-#define configUSE_TICK_HOOK                      1
+#define configUSE_IDLE_HOOK                      0
+#define configUSE_TICK_HOOK                      0
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
 #define configMAX_PRIORITIES                     ( 7 )
@@ -107,7 +107,6 @@
 #define configUSE_16_BIT_TICKS                   0
 #define configUSE_MUTEXES                        1
 #define configQUEUE_REGISTRY_SIZE                8
-#define configUSE_MALLOC_FAILED_HOOK             1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
 
 /* Co-routine definitions. */
