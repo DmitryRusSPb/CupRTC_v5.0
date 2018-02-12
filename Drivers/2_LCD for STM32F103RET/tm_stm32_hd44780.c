@@ -424,11 +424,7 @@ void TM_HD44780_Puts(uint8_t x, uint8_t y, uint8_t *str, uint8_t len)
 
 	// Определяем номер ячейки по горизонтали, чтобы
 	// текст был посередине
-	x = (LENGTH_OF_LINE_LCD/2) - (numOfsymbol/2);
-
-	// Если длина текста меньше 16, то двигаем
-	// ячейку на единицу влево
-	if(x != 0) x--;
+	x = (LENGTH_OF_LINE_LCD/2) - ceil(numOfsymbol/2);
 
 	// Устанавливаем курсор в заданную ячейку
 	TM_HD44780_CursorSet(x, y);

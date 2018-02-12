@@ -71,7 +71,7 @@ AnswerStatus SU_FLASH_Save_User_Data(RecData parsData, uint8_t numReceivedBytes)
 		// Вычитаем 15 из общего числа полученных байт, так как это не сами данные
 		// ,а лишь информация о роде данных.
 		messageSize = numReceivedBytes - 15;
-		multipleMessageSize = messageSize;
+		multipleMessageSize = parsData.blockNumber;
 		allDataSize += MAX_TEXT_SIZE;
 		// Прибавляем 4, так как нужно учесть запись о размере текста
 		// , которая занимает в памяти 4 байта

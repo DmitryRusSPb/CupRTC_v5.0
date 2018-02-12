@@ -304,6 +304,10 @@ void StartButtonTask(void const * argument)
 			// и зависай в цикле
 			if((pressTime <= 30)&&(pressTime >= 1))
 			{
+#ifdef WS2812B_ENABLE
+				vTaskSuspend(RGBws2812bHandle);
+				WS2812_send_group(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+#endif
 #ifdef AUDIO_ENABLE
 				playSound = 1;
 				osDelay(100);
@@ -429,11 +433,6 @@ void StartRGBws2812bTask(void const * argument)
 					eightbit[i+50][0], eightbit[i+50][1], eightbit[i+50][2],
 					eightbit[i][0], eightbit[i][1], eightbit[i][2],
 					eightbit[i+50][0], eightbit[i+50][1], eightbit[i+50][2]);
-			if(playSound)
-			{
-				WS2812_send_group(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-				vTaskSuspend(NULL);
-			}
 			osDelay(1000);
 
 		}
