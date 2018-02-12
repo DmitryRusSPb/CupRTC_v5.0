@@ -89,6 +89,9 @@ K     GND               Ground for back light
 #define NUMBER_OF_LINES_LCD   	2
 // Текст, который будет выводиться на дисплей во время обновления
 #define UPDATE_TEXT				"Идёт обновление!"
+// Текст, который будет выводиться на дисплей после обновления
+#define UPDATE_END_TEXT			"Готово!"
+#define LEN_UPDATE_END_TEXT     strlen(UPDATE_END_TEXT)
 // Демо-текст на первой строчке дисплея
 #define DEMO_TEXT_1             "Демо текст 1"
 // Демо-текст на второй строчке дисплея

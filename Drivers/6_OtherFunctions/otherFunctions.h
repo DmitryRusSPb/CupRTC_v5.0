@@ -8,6 +8,7 @@
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_flash.h"
 #include "cmsis_os.h"
+#include "string.h"
 #include "defines.h"
 #include "conspeex.h"
 

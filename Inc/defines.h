@@ -124,8 +124,11 @@
 // Адрес места в памяти для хранения Text16
 #define TEXT16_address          (SIZE_TEXT16_address + LENGTH_OF_LAST_RECORD)
 
+// Адрес места в памяти для хранения количесва принятых блоков текста
+#define TEXT_REC_COUNT			(TEXT16_address + MAX_TEXT_SIZE)
+
 // Адрес места в памяти для хранения количества фреймов(для аудиофайла)
-#define BLOCK_address          	(TEXT16_address + MAX_TEXT_SIZE)
+#define BLOCK_address          	(TEXT_REC_COUNT + LENGTH_OF_LAST_RECORD)
 // Адрес места в памяти для хранения аудиофайла
 #define SPEEX_address          	(BLOCK_address + LENGTH_OF_LAST_RECORD)
 

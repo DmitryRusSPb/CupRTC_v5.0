@@ -6,15 +6,15 @@
  */
 #include "otherFunctions.h"
 
+
 // Размер(в байтах) всех полученных данных
 uint16_t allDataSize;
 // Число страниц флеш памяти
 uint8_t pageNum = 0;
 // Сообщает нам о том, была ли уже очищена первая страница
 uint8_t firstErase = 0;
-// Массив, хранящий принимаемые данные до парсинга
-uint8_t dataBuffer[60];
 
+uint8_t textRecCount;
 
 GPIO_PinState AntiContactBounce(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 {
@@ -46,14 +46,28 @@ AnswerStatus SU_FLASH_Save_User_Data(RecData parsData, uint8_t numReceivedBytes)
 	switch (parsData.command)
 	{
 	// Занятое место
-	case 1:
+	case STATE:
 		// Место будет занимать в памяти 4 байта
 		messageSize = 4;
 		allDataSize += messageSize;
 		break;
-		// Тексты 1 и 2
-	case 2:
-	case 3:
+		// Тексты 1 - 16
+	case TEXT1:
+	case TEXT2:
+	case TEXT3:
+	case TEXT4:
+	case TEXT5:
+	case TEXT6:
+	case TEXT7:
+	case TEXT8:
+	case TEXT9:
+	case TEXT10:
+	case TEXT11:
+	case TEXT12:
+	case TEXT13:
+	case TEXT14:
+	case TEXT15:
+	case TEXT16:
 		// Вычитаем 15 из общего числа полученных байт, так как это не сами данные
 		// ,а лишь информация о роде данных.
 		messageSize = numReceivedBytes - 15;
@@ -64,16 +78,19 @@ AnswerStatus SU_FLASH_Save_User_Data(RecData parsData, uint8_t numReceivedBytes)
 		allDataSize += 4;
 		break;
 		// Количество фреймов (блоки по 20 байт)
-	case 4:
+	case BLOCK:
 		// Количество фреймов будет занимать в памяти 4 байта
 		messageSize = 4;
 		allDataSize += messageSize;
 		break;
 		// Аудиоданные
-	case 5:
+	case SPEEX:
 		// Аудиоданные будут занимать в памяти 20 байт
 		messageSize = 20;
 		allDataSize += messageSize;
+		break;
+	default:
+		//		while(1);
 		break;
 	}
 	osDelay(1);
@@ -113,19 +130,40 @@ AnswerStatus SU_FLASH_Save_User_Data(RecData parsData, uint8_t numReceivedBytes)
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, START_FLASH_PAGE, convert);
 		break;
 	case TEXT1:
-		WriteToFlash((uint32_t*)SIZE_TEXT1_address, (uint32_t)SIZE_RECORD_OF_TEXT_SIZE, (uint8_t*)&multipleMessageSize);
-		WriteToFlash((uint32_t*)TEXT1_address, (uint32_t)multipleMessageSize, parsData.data);
-		break;
 	case TEXT2:
-		WriteToFlash((uint32_t*)SIZE_TEXT2_address, (uint32_t)SIZE_RECORD_OF_TEXT_SIZE, (uint8_t*)&multipleMessageSize);
-		WriteToFlash((uint32_t*)TEXT2_address, (uint32_t)multipleMessageSize, parsData.data);
+	case TEXT3:
+	case TEXT4:
+	case TEXT5:
+	case TEXT6:
+	case TEXT7:
+	case TEXT8:
+	case TEXT9:
+	case TEXT10:
+	case TEXT11:
+	case TEXT12:
+	case TEXT13:
+	case TEXT14:
+	case TEXT15:
+	case TEXT16:
+		WriteToFlash((uint32_t*)(SIZE_TEXT1_address + (parsData.command - 1) * (SIZE_TEXT2_address-SIZE_TEXT1_address)),
+				(uint32_t)SIZE_RECORD_OF_TEXT_SIZE, (uint8_t*)&multipleMessageSize);
+		WriteToFlash((uint32_t*)(TEXT1_address + (parsData.command - 1) * (TEXT2_address - TEXT1_address)),
+				(uint32_t)multipleMessageSize, parsData.data);
+		textRecCount++;
 		break;
 	case BLOCK:
+		convert |= textRecCount;
+		//	Делаем запись о том, сколько строчек текста мы приняли
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, TEXT_REC_COUNT, convert);
+
 		convert |= parsData.blockNumber;
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, BLOCK_address, convert);
 		break;
 	case SPEEX:
-		WriteToFlash((uint32_t*)SPEEX_address + parsData.blockNumber*20, 20, parsData.data);
+		WriteToFlash((uint32_t*)(SPEEX_address + parsData.blockNumber*20), 20, parsData.data);
+		break;
+	default:
+		//		HAL_UART_Transmit(&huart2, (uint8_t*) "Memory write error", (uint16_t)strlen("Memory write error"), 0);
 		break;
 	}
 	HAL_FLASH_Lock();
@@ -137,7 +175,7 @@ void WriteToFlash(uint32_t* writeAddress, uint32_t sizeData, uint8_t *data)
 	// Записываем по 4 байта данные из буфера
 	for(uint8_t i = 0; i < sizeData; i+=4)
 	{
-		if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, *writeAddress, *(uint32_t*)(data)) == HAL_OK)
+		if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, writeAddress, *(uint32_t*)(data)) == HAL_OK)
 		{
 			writeAddress ++;
 			data += 4;

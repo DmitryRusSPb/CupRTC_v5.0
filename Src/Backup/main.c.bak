@@ -97,7 +97,6 @@ void MX_FREERTOS_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -132,10 +131,9 @@ int main(void)
   MX_DMA_Init();
   MX_DAC_Init();
   MX_SPI2_Init();
-  MX_TIM3_Init();
+  //MX_TIM3_Init();
   MX_TIM6_Init();
   MX_USART2_UART_Init();
-
   /* USER CODE BEGIN 2 */
 	// Проводим инициализацию подключенных устройств
 #ifdef LED_MATRIX_ENABLE

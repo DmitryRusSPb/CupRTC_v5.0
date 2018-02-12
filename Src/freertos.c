@@ -76,6 +76,8 @@
 
 /* Variables -----------------------------------------------------------------*/
 osThreadId LCDTaskHandle;
+osMessageQId uartRxQueueHandle;
+osSemaphoreId uartRxBinarySemHandle;
 
 /* USER CODE BEGIN Variables */
 osThreadId ButtonHandle;
@@ -109,6 +111,10 @@ extern uint8_t systemMode;
 
 // Массив, хранящий принимаемые данные до парсинга
 uint8_t dataBuffer[60];
+
+
+uint8_t rxByte;
+
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
@@ -132,6 +138,8 @@ void StartRGBws2812bTask(void const * argument);
 #endif
 
 void StartUSARTTask(void const * argument);
+
+HAL_StatusTypeDef USART_Receive_FromISR(UART_HandleTypeDef *huart, uint16_t Size);
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -147,50 +155,63 @@ void MX_FREERTOS_Init(void) {
 	/* add mutexes, ... */
 	/* USER CODE END RTOS_MUTEX */
 
+	/* Create the semaphores(s) */
+	/* definition and creation of uartRxBinarySem */
+	osSemaphoreDef(uartRxBinarySem);
+	uartRxBinarySemHandle = osSemaphoreCreate(osSemaphore(uartRxBinarySem), 1);
+
 	/* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
 	/* USER CODE END RTOS_SEMAPHORES */
 
 	/* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+	if(systemMode != SYSTEM_MODE_UPDATE)
+	{
+		/* USER CODE END RTOS_TIMERS */
 
-	/* Create the thread(s) */
-	/* definition and creation of LCDTask */
-	osThreadDef(LCDTask, StartLCDTask, osPriorityNormal, 0, 64);
-	LCDTaskHandle = osThreadCreate(osThread(LCDTask), NULL);
+		/* Create the thread(s) */
+		/* definition and creation of LCDTask */
+		osThreadDef(LCDTask, StartLCDTask, osPriorityNormal, 0, 64);
+		LCDTaskHandle = osThreadCreate(osThread(LCDTask), NULL);
 
-	/* USER CODE BEGIN RTOS_THREADS */
-	/* add threads, ... */
+		/* USER CODE BEGIN RTOS_THREADS */
+		/* add threads, ... */
+	}
 	if(systemMode == SYSTEM_MODE_UPDATE)
 	{
 		/* definition and creation of USART */
-		osThreadDef(USART, StartUSARTTask, osPriorityIdle, 0, 256);
+		osThreadDef(USART, StartUSARTTask, osPriorityNormal, 0, 256);
 		USARTHandle = osThreadCreate(osThread(USART), NULL);
 	}
 	else
 	{
-		osThreadDef(Button, StartButtonTask, osPriorityIdle, 0, 256);
+		osThreadDef(Button, StartButtonTask, osPriorityNormal, 0, 256);
 		ButtonHandle = osThreadCreate(osThread(Button), NULL);
 
 #ifdef	LED_MATRIX_ENABLE
 		/* definition and creation of LEDmatrix */
-		osThreadDef(LEDmatrix, StartLEDmatrixTask, osPriorityIdle, 0, 256);
+		osThreadDef(LEDmatrix, StartLEDmatrixTask, osPriorityNormal, 0, 256);
 		LEDmatrixHandle = osThreadCreate(osThread(LEDmatrix), NULL);
 #endif
 
 #ifdef	AUDIO_ENABLE
 		/* definition and creation of AudioMessage */
-		osThreadDef(AudioMessage, StartAudioMessageTask, osPriorityIdle, 0, 256);
+		osThreadDef(AudioMessage, StartAudioMessageTask, osPriorityNormal, 0, 256);
 		AudioMessageHandle = osThreadCreate(osThread(AudioMessage), NULL);
 #endif
 #ifdef	WS2812B_ENABLE
 		/* definition and creation of RGBws2812b */
-		osThreadDef(RGBws2812b, StartRGBws2812bTask, osPriorityIdle, 0, 512);
+		osThreadDef(RGBws2812b, StartRGBws2812bTask, osPriorityNormal, 0, 512);
 		RGBws2812bHandle = osThreadCreate(osThread(RGBws2812b), NULL);
 #endif
 	}
 	/* USER CODE END RTOS_THREADS */
+
+	/* Create the queue(s) */
+	/* definition and creation of uartRxQueue */
+	osMessageQDef(uartRxQueue, 60, uint8_t);
+	uartRxQueueHandle = osMessageCreate(osMessageQ(uartRxQueue), NULL);
 
 	/* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
@@ -209,51 +230,58 @@ void StartLCDTask(void const * argument)
 		vTaskSusped(NULL);
 #endif
 #ifdef LCD_ENABLE
-		//	// Чистим экран
-		//	TM_HD44780_Clear();
-		//	osDelay(100);
-		//	// Если включен демо-режим, то показываем демо-сообщение,
-		//	// если нет, то выводим текст, записанный в память
-		//	if(systemMode)
-		//	{
-		//		TM_HD44780_Puts(0, 0, (uint8_t*)DEMO_TEXT_1, LEN_DEMO_TEXT_1);
-		//		TM_HD44780_Puts(0, 1, (uint8_t*)DEMO_TEXT_2, LEN_DEMO_TEXT_2);
-		//	}
-		//	else
-		//	{
-		//		TM_HD44780_Puts(0, 0, (void *)TEXT2_address, *(uint32_t*)SIZE_TEXT2_address);
-		//		TM_HD44780_Puts(0, 1, (void *)TEXT1_address, *(uint32_t*)SIZE_TEXT1_address);
-		//	}
-		TM_HD44780_Clear();
-		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
-		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n1", strlen("Участник n1"));
-		osDelay(5000);
-		TM_HD44780_Clear();
-		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
-		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n2", strlen("Участник n2"));
-		osDelay(5000);
-		TM_HD44780_Clear();
-		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
-		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n3", strlen("Участник n3"));
-		osDelay(5000);
-		TM_HD44780_Clear();
-		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
-		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n4", strlen("Участник n4"));
-		osDelay(5000);
-		TM_HD44780_Clear();
-		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
-		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n5", strlen("Участник n5"));
-		osDelay(5000);
-		TM_HD44780_Clear();
-		TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
-		TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n6", strlen("Участник n6"));
+		// Если включен демо-режим, то показываем демо-сообщение,
+		// если нет, то выводим текст, записанный в память
+		if(!systemMode)
+		{
+			for(uint8_t i = 0; i < *(uint8_t*)TEXT_REC_COUNT; i++)
+			{
+				if((i % 2) == 0)
+				{
+					TM_HD44780_Clear();
+					TM_HD44780_Puts(0, 0, (uint8_t*)(TEXT1_address + i*(MAX_TEXT_SIZE + LENGTH_OF_LAST_RECORD)),
+							*(uint8_t*)(SIZE_TEXT1_address + i*(MAX_TEXT_SIZE + LENGTH_OF_LAST_RECORD)));
+				}
+				else if((i % 2) != 0)
+				{
+					TM_HD44780_Puts(0, 1, (uint8_t*)(TEXT1_address + i*(MAX_TEXT_SIZE + LENGTH_OF_LAST_RECORD)),
+							*(uint8_t*)(SIZE_TEXT1_address + i*(MAX_TEXT_SIZE + LENGTH_OF_LAST_RECORD)));
+					osDelay(5000);
+				}
+			}
+		}
+		else
+		{
+			TM_HD44780_Clear();
+			TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+			TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n1", strlen("Участник n1"));
+			osDelay(5000);
+			TM_HD44780_Clear();
+			TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+			TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n2", strlen("Участник n2"));
+			osDelay(5000);
+			TM_HD44780_Clear();
+			TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+			TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n3", strlen("Участник n3"));
+			osDelay(5000);
+			TM_HD44780_Clear();
+			TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+			TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n4", strlen("Участник n4"));
+			osDelay(5000);
+			TM_HD44780_Clear();
+			TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+			TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n5", strlen("Участник n5"));
+			osDelay(5000);
+			TM_HD44780_Clear();
+			TM_HD44780_Puts(0, 0, (uint8_t*)"Команда N", strlen("Команда N"));
+			TM_HD44780_Puts(0, 1, (uint8_t*)"Участник n6", strlen("Участник n6"));
+		}
 #endif
 	}
 	/* USER CODE END StartLCDTask */
 }
 
 /* USER CODE BEGIN Application */
-
 /* StartButtonTask function */
 void StartButtonTask(void const * argument)
 {
@@ -267,7 +295,7 @@ void StartButtonTask(void const * argument)
 			pressTime = 1;
 			// Крутим счётчик до тех пор пока зажата кнопка или
 			// значение счётчика меньше 255
-			while((!HAL_GPIO_ReadPin(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN))&&(pressTime != 255))
+			while((BUTTON_GPIO_PORT->IDR & BUTTON_GPIO_PIN)&&(pressTime != 255))
 			{
 				osDelay(100);
 				pressTime++;
@@ -278,7 +306,7 @@ void StartButtonTask(void const * argument)
 			{
 #ifdef AUDIO_ENABLE
 				playSound = 1;
-				osDelay(1000);
+				osDelay(100);
 				vTaskResume(AudioMessageHandle);
 #endif
 				// Обнуляем счётчик нажатия кнопки
@@ -371,7 +399,8 @@ void StartAudioMessageTask(void const * argument)
 		HAL_TIM_Base_Stop_IT(&htim6);
 		// Выключаем ЦАП
 		HAL_DAC_Stop(&hdac, DAC_CHANNEL_1);
-		//vTaskResume(RGBws2812bHandle);
+
+		vTaskResume(RGBws2812bHandle);
 		playSound = 0;
 
 		osDelay(1);
@@ -396,20 +425,17 @@ void StartRGBws2812bTask(void const * argument)
 		}
 		for (uint16_t i = 0; i+50 < 765; i++)
 		{
+			WS2812_send_group(eightbit[i][0], eightbit[i][1], eightbit[i][2],
+					eightbit[i+50][0], eightbit[i+50][1], eightbit[i+50][2],
+					eightbit[i][0], eightbit[i][1], eightbit[i][2],
+					eightbit[i+50][0], eightbit[i+50][1], eightbit[i+50][2]);
 			if(playSound)
 			{
 				WS2812_send_group(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-				while(playSound)
-					osDelay(100);
+				vTaskSuspend(NULL);
 			}
-			else
-			{
-				WS2812_send_group(eightbit[i][0], eightbit[i][1], eightbit[i][2],
-						eightbit[i+50][0], eightbit[i+50][1], eightbit[i+50][2],
-						eightbit[i][0], eightbit[i][1], eightbit[i][2],
-						eightbit[i+50][0], eightbit[i+50][1], eightbit[i+50][2]);
-				osDelay(1000);
-			}
+			osDelay(1000);
+
 		}
 		osDelay(100);
 	}
@@ -433,12 +459,19 @@ void StartUSARTTask(void const * argument)
 
 	uint8_t *ptrBuff;
 
+
 #ifdef LCD_ENABLE
 	uint8_t updateLine;
 	// Чистим экран
 	TM_HD44780_Clear();
 	updateLine = 0;
+	// Выводим сообщение об обновлении, так как оно стёрлось
+	TM_HD44780_Puts(0, 0, (uint8_t*)UPDATE_TEXT, LEN_UPDATE_TEXT);
 #endif
+
+	NVIC_EnableIRQ(USART2_IRQn);
+
+	xSemaphoreTake(uartRxBinarySemHandle, portMAX_DELAY);
 
 	for(;;)
 	{
@@ -460,19 +493,22 @@ void StartUSARTTask(void const * argument)
 			numBuff = 0;
 			// По умолчанию ответное сообщение означает успешную передачу
 			answer = 'g';
-			// Принимаем данные по байту и забрасываем в наш буфер
+
+			USART_Receive_FromISR(&huart2, 1);
+
+			xSemaphoreTake(uartRxBinarySemHandle, portMAX_DELAY);
+
 			while(numBuff < SIZE_BUFF)
 			{
-				// Приём
-				HAL_UART_Receive(&huart2, ptrBuff, 1, 0xFFFF);
-				// Увеличиваем счётчик принятых байтов
-				numBuff++;
-				// Если встретили символ окончания сообщения, то выходим из цикла
-				if(*ptrBuff == '>')
-					break;
-				// Двигаем указатель на следующий элемент массива
-				ptrBuff++;
+				if(xQueueReceive(uartRxQueueHandle, ptrBuff, portMAX_DELAY) == pdTRUE)
+				{
+					numBuff++;
+					if(*ptrBuff == '>')
+						break;
+					ptrBuff++;
+				}
 			}
+
 			// Если переданный пакет байтов состоит лишь из <0>, то это означает конец
 			// передачи. Выходим из цикла приёма пакетов
 			if((*ptrBuff == '>')&&(*(ptrBuff-1) == '0')&&(*(ptrBuff-2) == '<'))
@@ -502,7 +538,7 @@ void StartUSARTTask(void const * argument)
 
 			// Если не возникло ошибок при парсинге, то сохраняем
 			// полученные данные в памяти МК
-			if(dataBufferPars.command != 6)
+			if(dataBufferPars.command != ERR)
 			{
 				// Сохраняем данные в памяти
 				answer = SU_FLASH_Save_User_Data(dataBufferPars, numBuff);
@@ -515,14 +551,52 @@ void StartUSARTTask(void const * argument)
 				answer = 'f';
 			}
 			// Отправляем результат работы
-			HAL_UART_Transmit(&huart2, (uint8_t*)&answer, 1, 0xFFFF);
+			HAL_UART_Transmit(&huart2, (uint8_t*)&answer, 1, 10);
 		}
+		// Чистим экран
+		TM_HD44780_Clear();
+		// Выводим сообщение об окончании обновления
+		TM_HD44780_Puts(0, 0, (uint8_t*)UPDATE_END_TEXT, LEN_UPDATE_END_TEXT);
 		osDelay(100);
 		vTaskDelete(NULL);
 	}
 	/* USER CODE END StartUSARTTask */
 }
 
+HAL_StatusTypeDef USART_Receive_FromISR(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	/* Check that a Rx process is not already ongoing */
+	if(huart->RxState == HAL_UART_STATE_READY)
+	{
+
+		/* Process Locked */
+		__HAL_LOCK(huart);
+
+		huart->RxXferSize = Size;
+		huart->RxXferCount = Size;
+
+		huart->ErrorCode = HAL_UART_ERROR_NONE;
+		huart->RxState = HAL_UART_STATE_BUSY_RX;
+
+		/* Process Unlocked */
+		__HAL_UNLOCK(huart);
+
+		/* Enable the UART Parity Error Interrupt */
+		__HAL_UART_ENABLE_IT(huart, UART_IT_PE);
+
+		/* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+		__HAL_UART_ENABLE_IT(huart, UART_IT_ERR);
+
+		/* Enable the UART Data Register not empty Interrupt */
+		__HAL_UART_ENABLE_IT(huart, UART_IT_RXNE);
+
+		return HAL_OK;
+	}
+	else
+	{
+		return HAL_BUSY;
+	}
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

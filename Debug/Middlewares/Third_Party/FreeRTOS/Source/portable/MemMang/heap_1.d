@@ -1,5 +1,5 @@
-Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_3.o: \
- ../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_3.c \
+Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.o: \
+ ../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c \
  /home/user/workspaceSTM32/CupRTC_v5.0/Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  /home/user/workspaceSTM32/CupRTC_v5.0/Inc/FreeRTOSConfig.h \
  /home/user/workspaceSTM32/CupRTC_v5.0/Inc/main.h \

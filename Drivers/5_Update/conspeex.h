@@ -4,37 +4,46 @@
  *  Created on: 22.05.2017
  *      Author: artem
  */
+
 #ifndef CONSPEEX_H_
 #define CONSPEEX_H_
-
 #include <stdint.h>
+#define BUFLEN 100				// размер вспомогательного буффера
 
+typedef enum enumCommand
+{
+	STATE,
+	TEXT1,
+	TEXT2,
+	TEXT3,
+	TEXT4,
+	TEXT5,
+	TEXT6,
+	TEXT7,
+	TEXT8,
+	TEXT9,
+	TEXT10,
+	TEXT11,
+	TEXT12,
+	TEXT13,
+	TEXT14,
+	TEXT15,
+	TEXT16,
+	BLOCK,
+	SPEEX,
+	ERR
+}	Command;	
 
-#define STATE 1
-#define TEXT1 2
-#define TEXT2 3
-#define BLOCK 4
-#define SPEEX 5
-#define ERROR 6
-#define BUFLEN 100
 
 typedef enum enumFormat{
 	BIGEN,															// порядок хранения данных. Порядок от старшего к младшему (англ. big-endian — большим концом)
 	LITTLEN															// Порядок от младшего к старшему (англ. little-endian)
-}Format;
+} Format;
 
 typedef struct{
-	char command;
-	char blockNumber[5];  													// один дополнительный байт взят, для удобства распарсивания
-	char data[BUFLEN];
-	char hesh[4];
-} str_RecData;
-
-
-typedef struct{
-	uint8_t command;														// комманда
-	uint16_t blockNumber;													// *****
-	uint8_t data[BUFLEN];													// поле данных
+	Command command;																// комманда
+	uint16_t blockNumber;														// *****
+	uint8_t data[BUFLEN];														// поле данных
 } RecData;
 
 /*****
@@ -43,16 +52,12 @@ typedef struct{
  * Для комманды BLOCK хранит общее количество блоков
 */
 
-uint8_t convert_hexchar_to_char(char );                                  	// перевод шестнадцатиричного символа в число типа данных uint16_t
-uint8_t convert_hexstring(uint8_t*, char *, uint8_t, Format);		// перевод текстовой шестнадцатиричной строки в байтовый массив
-void convert_text(uint8_t* , char* , uint8_t);								// копирование строки из char в uint16_t
-char command_definer(char*);												// определитель комманд
-str_RecData parsing_str_data(char*);										// распарсивание строки в структуру str_RecData
-RecData convert_speex_str_to_data(str_RecData );						// перевод данных из структуры str_RecData в str_RecData
-void print(RecData );													// ф-ия печати RecData(для отладки)
-RecData parsing(char*, uint8_t);													// парсинг данных(пользовательская ф-ия)
-uint16_t calcrc(char*, uint8_t );											// вычисление хеш-суммы
+static uint8_t convertSymbolToNumber(char sym);				// Переводит символ в число
+static uint8_t convertStringToNumber(char* str, uint8_t* ret, uint8_t size, Format format); // переводит строку в число, ret - указатель на область памяти, где хранится число
+static Command commandDefiner(char *str);							// Возвращает команду, которая записана в строке. str - указатель на начало комманды 
+static uint16_t calcrc(char *ptr, uint8_t count);		  // вычисление хеш-суммы crc16Xmodem
+RecData parsing(char* str, uint8_t size);			  // парсер строки данных
 
 
-#endif
- /* CONSPEEX_H_ */
+
+#endif /* CONSPEEX_H_ */
